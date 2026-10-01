@@ -38,5 +38,6 @@ jobs:
             echo "core/vfs is already formatted"
           else
             git commit -m "style: cargo fmt --all (core/vfs)"
-            git push
+            # actions/checkout leaves a detached HEAD on pull_request runs.
+            git push origin HEAD:refs/heads/${{ github.head_ref }}
           fi
