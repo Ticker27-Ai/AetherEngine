@@ -23,6 +23,12 @@ android {
     namespace = "dev.aether.host"
     compileSdk = libs.versions.compileSdk.get().toInt()
 
+    // This module declares buildConfigField(...) below, so BuildConfig
+    // generation is enabled here (the global AGP flag for it is deprecated).
+    buildFeatures {
+        buildConfig = true
+    }
+
     defaultConfig {
         minSdk = libs.versions.minSdk.get().toInt()
         testOptions.targetSdk = libs.versions.targetSdk.get().toInt()
@@ -44,7 +50,8 @@ android {
 
     externalNativeBuild {
         cmake {
-            path = "src/main/cpp/CMakeLists.txt"
+            // AGP's Kotlin DSL types this as File, not String.
+            path = file("src/main/cpp/CMakeLists.txt")
             version = "3.22.1"
         }
     }
