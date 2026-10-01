@@ -113,8 +113,18 @@ pub struct Rule {
 
 impl Rule {
     /// Build a rule.
-    pub fn new(template: impl Into<String>, action: Action, bucket: &str, note: &'static str) -> Self {
-        Rule { template: template.into(), action, bucket: bucket.to_string(), note }
+    pub fn new(
+        template: impl Into<String>,
+        action: Action,
+        bucket: &str,
+        note: &'static str,
+    ) -> Self {
+        Rule {
+            template: template.into(),
+            action,
+            bucket: bucket.to_string(),
+            note,
+        }
     }
 
     /// Number of wildcards — used as a specificity tie-break.
@@ -231,7 +241,9 @@ pub fn validate_template(template: &str) -> Result<(), String> {
     }
     let normalized = path::normalize(template);
     if normalized != template {
-        return Err(format!("template is not normalized: {template} -> {normalized}"));
+        return Err(format!(
+            "template is not normalized: {template} -> {normalized}"
+        ));
     }
     Ok(())
 }
@@ -273,7 +285,12 @@ mod tests {
     fn longest_match_beats_declaration_order() {
         let mut rs = RuleSet::new();
         rs.push(Rule::new("/sdcard/", Action::Passthrough, "-", "generic"));
-        rs.push(Rule::new("/sdcard/Android/data/p", Action::Shadow, "shared_data", "scoped"));
+        rs.push(Rule::new(
+            "/sdcard/Android/data/p",
+            Action::Shadow,
+            "shared_data",
+            "scoped",
+        ));
         let (rule, len) = rs.best_match("/sdcard/Android/data/p/x").unwrap();
         assert_eq!(rule.action, Action::Shadow);
         assert_eq!(len, 22);
@@ -282,7 +299,12 @@ mod tests {
     #[test]
     fn concrete_beats_equally_long_wildcard() {
         let mut rs = RuleSet::new();
-        rs.push(Rule::new("/data/data/com.example", Action::Shadow, "data", "self"));
+        rs.push(Rule::new(
+            "/data/data/com.example",
+            Action::Shadow,
+            "data",
+            "self",
+        ));
         rs.push(Rule::new("/data/data/*", Action::Deny, "-", "others"));
         let (rule, _) = rs.best_match("/data/data/com.example").unwrap();
         assert_eq!(rule.action, Action::Shadow);

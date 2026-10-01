@@ -139,7 +139,11 @@ pub extern "C" fn aether_vfs_create(
 ) -> i64 {
     guard(|| unsafe {
         clear_error();
-        let (guest, host, dir) = match (to_str(guest_package), to_str(host_package), to_str(host_data_dir)) {
+        let (guest, host, dir) = match (
+            to_str(guest_package),
+            to_str(host_package),
+            to_str(host_data_dir),
+        ) {
             (Ok(a), Ok(b), Ok(c)) => (a, b, c),
             (Err(e), _, _) | (_, Err(e), _) | (_, _, Err(e)) => return e as i64,
         };
@@ -197,7 +201,10 @@ pub extern "C" fn aether_vfs_to_host_len(handle: u64, guest_path: *const c_char)
         };
         match with_vfs(handle, |v| v.translate(p)) {
             Ok(r) if r.status == crate::translator::Status::Denied => {
-                set_error(format!("denied: {}", r.reason.map(|x| x.as_str()).unwrap_or("unknown")));
+                set_error(format!(
+                    "denied: {}",
+                    r.reason.map(|x| x.as_str()).unwrap_or("unknown")
+                ));
                 ERR_DENIED as i64
             }
             Ok(r) => (r.path.len() + 1) as i64,
@@ -222,7 +229,10 @@ pub extern "C" fn aether_vfs_to_host(
         };
         match with_vfs(handle, |v| v.translate(p)) {
             Ok(r) if r.status == crate::translator::Status::Denied => {
-                set_error(format!("denied: {}", r.reason.map(|x| x.as_str()).unwrap_or("unknown")));
+                set_error(format!(
+                    "denied: {}",
+                    r.reason.map(|x| x.as_str()).unwrap_or("unknown")
+                ));
                 ERR_DENIED
             }
             Ok(r) => write_out(&r.path, out, out_cap),
@@ -260,17 +270,28 @@ pub extern "C" fn aether_vfs_to_guest(
 /// Policy probe. `write_mode`: 1 = the guest intends to write/create/delete.
 /// Returns `OK` (allowed) or `ERR_DENIED`.
 #[no_mangle]
-pub extern "C" fn aether_vfs_check(handle: u64, guest_path: *const c_char, write_mode: c_int) -> c_int {
+pub extern "C" fn aether_vfs_check(
+    handle: u64,
+    guest_path: *const c_char,
+    write_mode: c_int,
+) -> c_int {
     guard(|| unsafe {
         clear_error();
         let p = match to_str(guest_path) {
             Ok(p) => p,
             Err(e) => return e,
         };
-        let mode = if write_mode != 0 { Mode::Write } else { Mode::Read };
+        let mode = if write_mode != 0 {
+            Mode::Write
+        } else {
+            Mode::Read
+        };
         match with_vfs(handle, |v| v.resolve(p, mode)) {
             Ok(r) if r.status == crate::translator::Status::Denied => {
-                set_error(format!("denied: {}", r.reason.map(|x| x.as_str()).unwrap_or("unknown")));
+                set_error(format!(
+                    "denied: {}",
+                    r.reason.map(|x| x.as_str()).unwrap_or("unknown")
+                ));
                 ERR_DENIED
             }
             Ok(_) => OK,
@@ -331,7 +352,11 @@ pub extern "C" fn aether_vfs_add_rule(
 
 /// Register a guest-visible symlink.
 #[no_mangle]
-pub extern "C" fn aether_vfs_add_link(handle: u64, from: *const c_char, to: *const c_char) -> c_int {
+pub extern "C" fn aether_vfs_add_link(
+    handle: u64,
+    from: *const c_char,
+    to: *const c_char,
+) -> c_int {
     guard(|| unsafe {
         clear_error();
         let (f, t) = match (to_str(from), to_str(to)) {
@@ -396,11 +421,21 @@ mod tests {
         assert!(n > 0);
 
         let mut buf = vec![0u8; n as usize];
-        let rc = aether_vfs_to_host(h, guest.as_ptr(), buf.as_mut_ptr() as *mut c_char, buf.len());
+        let rc = aether_vfs_to_host(
+            h,
+            guest.as_ptr(),
+            buf.as_mut_ptr() as *mut c_char,
+            buf.len(),
+        );
         assert_eq!(rc, OK);
 
-        let s = unsafe { CStr::from_ptr(buf.as_ptr() as *const c_char) }.to_str().unwrap();
-        assert_eq!(s, "/data/user/0/dev.aether.host/aether/virtual/com.target.game/data/files/a.dat");
+        let s = unsafe { CStr::from_ptr(buf.as_ptr() as *const c_char) }
+            .to_str()
+            .unwrap();
+        assert_eq!(
+            s,
+            "/data/user/0/dev.aether.host/aether/virtual/com.target.game/data/files/a.dat"
+        );
 
         let rc = aether_vfs_check(h, guest.as_ptr(), 1);
         assert_eq!(rc, OK);
@@ -412,7 +447,12 @@ mod tests {
         // handle is gone -> invalid
         let mut buf2 = vec![0u8; 64];
         assert_eq!(
-            aether_vfs_to_host(h, guest.as_ptr(), buf2.as_mut_ptr() as *mut c_char, buf2.len()),
+            aether_vfs_to_host(
+                h,
+                guest.as_ptr(),
+                buf2.as_mut_ptr() as *mut c_char,
+                buf2.len()
+            ),
             ERR_INVALID_HANDLE
         );
     }
@@ -422,11 +462,18 @@ mod tests {
         let h = make();
         let guest = cs("/data/data/com.target.game");
         let mut small = vec![0u8; 4];
-        let rc = aether_vfs_to_host(h, guest.as_ptr(), small.as_mut_ptr() as *mut c_char, small.len());
+        let rc = aether_vfs_to_host(
+            h,
+            guest.as_ptr(),
+            small.as_mut_ptr() as *mut c_char,
+            small.len(),
+        );
         assert_eq!(rc, ERR_BUFFER_TOO_SMALL);
         let mut err = vec![0u8; 256];
         aether_vfs_last_error(err.as_mut_ptr() as *mut c_char, err.len());
-        let msg = unsafe { CStr::from_ptr(err.as_ptr() as *const c_char) }.to_str().unwrap();
+        let msg = unsafe { CStr::from_ptr(err.as_ptr() as *const c_char) }
+            .to_str()
+            .unwrap();
         assert!(msg.starts_with("buffer too small"));
         aether_vfs_destroy(h);
     }
@@ -445,7 +492,9 @@ mod tests {
         let n = aether_vfs_to_host_len(h, p.as_ptr()) as usize;
         let mut buf = vec![0u8; n];
         aether_vfs_to_host(h, p.as_ptr(), buf.as_mut_ptr() as *mut c_char, buf.len());
-        let s = unsafe { CStr::from_ptr(buf.as_ptr() as *const c_char) }.to_str().unwrap();
+        let s = unsafe { CStr::from_ptr(buf.as_ptr() as *const c_char) }
+            .to_str()
+            .unwrap();
         assert!(s.ends_with("/com.target.game/shared_data/shared.bin"));
         aether_vfs_destroy(h);
     }
@@ -453,7 +502,10 @@ mod tests {
     #[test]
     fn null_pointer_is_rejected_not_crashed() {
         let h = make();
-        assert_eq!(aether_vfs_to_host_len(h, std::ptr::null()), ERR_NULL_POINTER as i64);
+        assert_eq!(
+            aether_vfs_to_host_len(h, std::ptr::null()),
+            ERR_NULL_POINTER as i64
+        );
         aether_vfs_destroy(h);
     }
 }

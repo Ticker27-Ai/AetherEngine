@@ -12,17 +12,17 @@ use crate::rules::{Action, DenyReason, Mode, Rule, RuleSet};
 #[derive(Debug, Clone)]
 pub struct ShadowLayout {
     /// Backs `/data/data/<pkg>` — databases, shared prefs, files.
-    pub data: &'static str,          // /data/data/<pkg>
+    pub data: &'static str, // /data/data/<pkg>
     /// Backs `/sdcard/Android/data/<pkg>`.
-    pub shared_data: &'static str,   // /sdcard/Android/data/<pkg>
+    pub shared_data: &'static str, // /sdcard/Android/data/<pkg>
     /// Backs `/sdcard/Android/media/<pkg>`.
-    pub shared_media: &'static str,  // /sdcard/Android/media/<pkg>
+    pub shared_media: &'static str, // /sdcard/Android/media/<pkg>
     /// Backs `/sdcard/Android/obb/<pkg>` (expansion files).
-    pub obb: &'static str,           // /sdcard/Android/obb/<pkg>
+    pub obb: &'static str, // /sdcard/Android/obb/<pkg>
     /// Backs `/sdcard` itself, but only when [`SharedMedia::Isolate`] is selected.
-    pub shared_primary: &'static str,// /sdcard  (only when SharedMedia::Isolate)
+    pub shared_primary: &'static str, // /sdcard  (only when SharedMedia::Isolate)
     /// Scratch space; safe to delete on uninstall.
-    pub cache: &'static str,         // scratch, cleared on uninstall
+    pub cache: &'static str, // scratch, cleared on uninstall
 }
 
 impl Default for ShadowLayout {
@@ -126,7 +126,13 @@ pub struct Resolution {
 
 impl Resolution {
     fn denied(reason: DenyReason, rule: Option<String>) -> Self {
-        Resolution { status: Status::Denied, path: String::new(), writable: false, reason: Some(reason), matched_rule: rule }
+        Resolution {
+            status: Status::Denied,
+            path: String::new(),
+            writable: false,
+            reason: Some(reason),
+            matched_rule: rule,
+        }
     }
 }
 
@@ -146,7 +152,12 @@ impl Vfs {
     /// Build a VFS instance, materialising the default policy for its guest.
     pub fn new(cfg: VfsConfig) -> Self {
         let (rules, reverse) = build_rules(&cfg);
-        Vfs { cfg, rules, links: default_links(), reverse }
+        Vfs {
+            cfg,
+            rules,
+            links: default_links(),
+            reverse,
+        }
     }
 
     // ---------- configuration accessors ----------
@@ -193,7 +204,10 @@ impl Vfs {
 
     /// Where the guest's extracted `.so` files live (host-side, not guest-visible).
     pub fn native_lib_dir(&self) -> String {
-        format!("{}/aether/native/{}", self.cfg.host_data_dir, self.cfg.guest_package)
+        format!(
+            "{}/aether/native/{}",
+            self.cfg.host_data_dir, self.cfg.guest_package
+        )
     }
 
     // ---------- core API ----------
@@ -221,7 +235,13 @@ impl Vfs {
                 return if self.cfg.strict {
                     Resolution::denied(DenyReason::NoRule, None)
                 } else {
-                    Resolution { status: Status::Native, path: resolved, writable: true, reason: None, matched_rule: None }
+                    Resolution {
+                        status: Status::Native,
+                        path: resolved,
+                        writable: true,
+                        reason: None,
+                        matched_rule: None,
+                    }
                 }
             }
         };
@@ -242,7 +262,13 @@ impl Vfs {
                 if mode.is_write() {
                     Resolution::denied(DenyReason::WriteToReadOnly, matched)
                 } else {
-                    Resolution { status: Status::Native, path: resolved, writable: false, reason: None, matched_rule: matched }
+                    Resolution {
+                        status: Status::Native,
+                        path: resolved,
+                        writable: false,
+                        reason: None,
+                        matched_rule: matched,
+                    }
                 }
             }
 
@@ -319,7 +345,14 @@ impl Vfs {
     pub fn describe(&self) -> Vec<String> {
         self.rules
             .iter()
-            .map(|r| format!("{:<52}{:<24}{}", r.template, format!("{:?}", r.action), r.note))
+            .map(|r| {
+                format!(
+                    "{:<52}{:<24}{}",
+                    r.template,
+                    format!("{:?}", r.action),
+                    r.note
+                )
+            })
             .collect()
     }
 
@@ -359,8 +392,14 @@ fn default_links() -> BTreeMap<String, String> {
     let mut m = BTreeMap::new();
     m.insert("/sdcard".to_string(), "/storage/emulated/0".to_string());
     m.insert("/mnt/sdcard".to_string(), "/storage/emulated/0".to_string());
-    m.insert("/mnt/user/0/primary".to_string(), "/storage/emulated/0".to_string());
-    m.insert("/storage/self/primary".to_string(), "/storage/emulated/0".to_string());
+    m.insert(
+        "/mnt/user/0/primary".to_string(),
+        "/storage/emulated/0".to_string(),
+    );
+    m.insert(
+        "/storage/self/primary".to_string(),
+        "/storage/emulated/0".to_string(),
+    );
     m.insert("/data/data/self".to_string(), "/data/data".to_string());
     m
 }
@@ -376,37 +415,137 @@ fn build_rules(cfg: &VfsConfig) -> (RuleSet, Vec<(String, String)>) {
     // ---- 1. HOST AND CROSS-GUEST ISOLATION GUARDS ---------------------------
     // Declared first so ties fall our way, and they are also the longest
     // matches for the paths they protect.
-    rs.push(Rule::new(format!("/data/data/{host}"), Action::Deny, "-", "host private data"));
-    rs.push(Rule::new(format!("/data/user/{}/{}", cfg.user_id, host), Action::Deny, "-", "host private data (multi-user)"));
-    rs.push(Rule::new("/data/user/*/".to_string() + host, Action::Deny, "-", "host private data (any user)"));
-    rs.push(Rule::new(cfg.host_data_dir.clone(), Action::Deny, "-", "host data root"));
-    rs.push(Rule::new("/data/data/*", Action::Deny, "-", "other packages"));
-    rs.push(Rule::new("/data/user/*/", Action::Deny, "-", "other packages (multi-user)"));
+    rs.push(Rule::new(
+        format!("/data/data/{host}"),
+        Action::Deny,
+        "-",
+        "host private data",
+    ));
+    rs.push(Rule::new(
+        format!("/data/user/{}/{}", cfg.user_id, host),
+        Action::Deny,
+        "-",
+        "host private data (multi-user)",
+    ));
+    rs.push(Rule::new(
+        "/data/user/*/".to_string() + host,
+        Action::Deny,
+        "-",
+        "host private data (any user)",
+    ));
+    rs.push(Rule::new(
+        cfg.host_data_dir.clone(),
+        Action::Deny,
+        "-",
+        "host data root",
+    ));
+    rs.push(Rule::new(
+        "/data/data/*",
+        Action::Deny,
+        "-",
+        "other packages",
+    ));
+    rs.push(Rule::new(
+        "/data/user/*/",
+        Action::Deny,
+        "-",
+        "other packages (multi-user)",
+    ));
     // The shadow tree itself must never be reachable from inside the guest.
-    rs.push(Rule::new(cfg.shadow_root(), Action::Deny, "-", "shadow root"));
+    rs.push(Rule::new(
+        cfg.shadow_root(),
+        Action::Deny,
+        "-",
+        "shadow root",
+    ));
 
     // ---- 2. THE GUEST'S OWN PRIVATE DATA -> SHADOW --------------------------
-    rs.push(Rule::new(format!("/data/data/{pkg}"), Action::Shadow, l.data, "guest private data"));
-    rs.push(Rule::new(format!("/data/user/{}/{pkg}", cfg.user_id), Action::Shadow, l.data, "guest private data (this user)"));
-    rs.push(Rule::new(format!("/data/user/*/{pkg}"), Action::Shadow, l.data, "guest private data (any user)"));
-    rs.push(Rule::new(format!("/data/user_de/{}/{pkg}", cfg.user_id), Action::Shadow, l.data, "device-encrypted storage"));
+    rs.push(Rule::new(
+        format!("/data/data/{pkg}"),
+        Action::Shadow,
+        l.data,
+        "guest private data",
+    ));
+    rs.push(Rule::new(
+        format!("/data/user/{}/{pkg}", cfg.user_id),
+        Action::Shadow,
+        l.data,
+        "guest private data (this user)",
+    ));
+    rs.push(Rule::new(
+        format!("/data/user/*/{pkg}"),
+        Action::Shadow,
+        l.data,
+        "guest private data (any user)",
+    ));
+    rs.push(Rule::new(
+        format!("/data/user_de/{}/{pkg}", cfg.user_id),
+        Action::Shadow,
+        l.data,
+        "device-encrypted storage",
+    ));
 
     // ---- 3. SCOPED EXTERNAL STORAGE -> SHADOW -------------------------------
-    for base in ["/sdcard", "/storage/emulated/0", "/storage/self/primary", "/mnt/sdcard"] {
-        rs.push(Rule::new(format!("{base}/Android/data/{pkg}"), Action::Shadow, l.shared_data, "scoped external data"));
-        rs.push(Rule::new(format!("{base}/Android/media/{pkg}"), Action::Shadow, l.shared_media, "scoped external media"));
-        rs.push(Rule::new(format!("{base}/Android/obb/{pkg}"), Action::Shadow, l.obb, "expansion files"));
+    for base in [
+        "/sdcard",
+        "/storage/emulated/0",
+        "/storage/self/primary",
+        "/mnt/sdcard",
+    ] {
+        rs.push(Rule::new(
+            format!("{base}/Android/data/{pkg}"),
+            Action::Shadow,
+            l.shared_data,
+            "scoped external data",
+        ));
+        rs.push(Rule::new(
+            format!("{base}/Android/media/{pkg}"),
+            Action::Shadow,
+            l.shared_media,
+            "scoped external media",
+        ));
+        rs.push(Rule::new(
+            format!("{base}/Android/obb/{pkg}"),
+            Action::Shadow,
+            l.obb,
+            "expansion files",
+        ));
     }
     // Do NOT let the guest read sibling packages' scoped storage. These are
     // longer matches than the shared-storage default, so they win for every
     // package except our own (which is matched by the concrete rules above).
     for kind in ["data", "media", "obb"] {
-        rs.push(Rule::new(format!("/storage/emulated/*/Android/{kind}/*"), Action::Deny, "-", "other packages' scoped storage"));
-        rs.push(Rule::new(format!("/sdcard/Android/{kind}/*"), Action::Deny, "-", "other packages' scoped storage"));
+        rs.push(Rule::new(
+            format!("/storage/emulated/*/Android/{kind}/*"),
+            Action::Deny,
+            "-",
+            "other packages' scoped storage",
+        ));
+        rs.push(Rule::new(
+            format!("/sdcard/Android/{kind}/*"),
+            Action::Deny,
+            "-",
+            "other packages' scoped storage",
+        ));
     }
-    rs.push(Rule::new(format!("/storage/emulated/*/Android/data/{pkg}"), Action::Shadow, l.shared_data, "scoped external data (any user)"));
-    rs.push(Rule::new(format!("/storage/emulated/*/Android/media/{pkg}"), Action::Shadow, l.shared_media, "scoped external media (any user)"));
-    rs.push(Rule::new(format!("/storage/emulated/*/Android/obb/{pkg}"), Action::Shadow, l.obb, "expansion files (any user)"));
+    rs.push(Rule::new(
+        format!("/storage/emulated/*/Android/data/{pkg}"),
+        Action::Shadow,
+        l.shared_data,
+        "scoped external data (any user)",
+    ));
+    rs.push(Rule::new(
+        format!("/storage/emulated/*/Android/media/{pkg}"),
+        Action::Shadow,
+        l.shared_media,
+        "scoped external media (any user)",
+    ));
+    rs.push(Rule::new(
+        format!("/storage/emulated/*/Android/obb/{pkg}"),
+        Action::Shadow,
+        l.obb,
+        "expansion files (any user)",
+    ));
 
     // ---- 4. SHARED EXTERNAL STORAGE ----------------------------------------
     let shared_action = match cfg.shared_media {
@@ -414,35 +553,110 @@ fn build_rules(cfg: &VfsConfig) -> (RuleSet, Vec<(String, String)>) {
         SharedMedia::Isolate => Action::Shadow,
         SharedMedia::Deny => Action::Deny,
     };
-    let shared_bucket = if shared_action == Action::Shadow { l.shared_primary } else { "-" };
-    for base in ["/sdcard", "/storage/emulated/0", "/storage/self/primary", "/mnt/sdcard", "/data/media"] {
-        rs.push(Rule::new(base, shared_action, shared_bucket, "shared storage"));
+    let shared_bucket = if shared_action == Action::Shadow {
+        l.shared_primary
+    } else {
+        "-"
+    };
+    for base in [
+        "/sdcard",
+        "/storage/emulated/0",
+        "/storage/self/primary",
+        "/mnt/sdcard",
+        "/data/media",
+    ] {
+        rs.push(Rule::new(
+            base,
+            shared_action,
+            shared_bucket,
+            "shared storage",
+        ));
     }
-    rs.push(Rule::new("/storage/emulated/*", shared_action, shared_bucket, "shared storage (any user)"));
-    rs.push(Rule::new("/storage/*", Action::ReadOnlyPassthrough, "-", "removable/OTG media"));
+    rs.push(Rule::new(
+        "/storage/emulated/*",
+        shared_action,
+        shared_bucket,
+        "shared storage (any user)",
+    ));
+    rs.push(Rule::new(
+        "/storage/*",
+        Action::ReadOnlyPassthrough,
+        "-",
+        "removable/OTG media",
+    ));
 
     // ---- 5. READ-ONLY SYSTEM SURFACES ---------------------------------------
     for p in [
-        "/system", "/system_ext", "/vendor", "/odm", "/oem", "/product", "/apex",
-        "/etc", "/proc", "/sys", "/config", "/metadata", "/data/dalvik-cache",
-        "/data/app", "/data/misc", "/data/system", "/data/local",
+        "/system",
+        "/system_ext",
+        "/vendor",
+        "/odm",
+        "/oem",
+        "/product",
+        "/apex",
+        "/etc",
+        "/proc",
+        "/sys",
+        "/config",
+        "/metadata",
+        "/data/dalvik-cache",
+        "/data/app",
+        "/data/misc",
+        "/data/system",
+        "/data/local",
     ] {
-        rs.push(Rule::new(p, Action::ReadOnlyPassthrough, "-", "system surface"));
+        rs.push(Rule::new(
+            p,
+            Action::ReadOnlyPassthrough,
+            "-",
+            "system surface",
+        ));
     }
     // The guest must be able to *read* its own installed APK.
-    rs.push(Rule::new(format!("/data/app/{pkg}-*"), Action::ReadOnlyPassthrough, "-", "guest apk"));
-    rs.push(Rule::new(format!("/data/app/*/{pkg}-*"), Action::ReadOnlyPassthrough, "-", "guest apk (A10+ layout)"));
+    rs.push(Rule::new(
+        format!("/data/app/{pkg}-*"),
+        Action::ReadOnlyPassthrough,
+        "-",
+        "guest apk",
+    ));
+    rs.push(Rule::new(
+        format!("/data/app/*/{pkg}-*"),
+        Action::ReadOnlyPassthrough,
+        "-",
+        "guest apk (A10+ layout)",
+    ));
 
     // ---- 6. DANGEROUS / NEVER ------------------------------------------------
     rs.push(Rule::new("/data/adb", Action::Deny, "-", "root tooling"));
-    rs.push(Rule::new("/data/local/tmp", Action::Passthrough, "-", "debuggable scratch"));
-    rs.push(Rule::new("/dev", Action::Passthrough, "-", "devices, ashmem, urandom"));
-    rs.push(Rule::new("/proc/self", Action::Passthrough, "-", "self introspection"));
+    rs.push(Rule::new(
+        "/data/local/tmp",
+        Action::Passthrough,
+        "-",
+        "debuggable scratch",
+    ));
+    rs.push(Rule::new(
+        "/dev",
+        Action::Passthrough,
+        "-",
+        "devices, ashmem, urandom",
+    ));
+    rs.push(Rule::new(
+        "/proc/self",
+        Action::Passthrough,
+        "-",
+        "self introspection",
+    ));
 
     let reverse = vec![
         (l.data.to_string(), format!("/data/data/{pkg}")),
-        (l.shared_data.to_string(), format!("/sdcard/Android/data/{pkg}")),
-        (l.shared_media.to_string(), format!("/sdcard/Android/media/{pkg}")),
+        (
+            l.shared_data.to_string(),
+            format!("/sdcard/Android/data/{pkg}"),
+        ),
+        (
+            l.shared_media.to_string(),
+            format!("/sdcard/Android/media/{pkg}"),
+        ),
         (l.obb.to_string(), format!("/sdcard/Android/obb/{pkg}")),
         (l.shared_primary.to_string(), "/sdcard".to_string()),
         (l.cache.to_string(), format!("/data/data/{pkg}/cache")),
@@ -456,7 +670,11 @@ mod tests {
     use super::*;
 
     fn cfg() -> VfsConfig {
-        VfsConfig::new("com.target.game", "dev.aether.host", "/data/user/0/dev.aether.host")
+        VfsConfig::new(
+            "com.target.game",
+            "dev.aether.host",
+            "/data/user/0/dev.aether.host",
+        )
     }
 
     #[test]
@@ -464,7 +682,10 @@ mod tests {
         let vfs = Vfs::new(cfg());
         let r = vfs.translate("/data/data/com.target.game/shared_prefs/x.xml");
         assert_eq!(r.status, Status::Shadowed);
-        assert_eq!(r.path, "/data/user/0/dev.aether.host/aether/virtual/com.target.game/data/shared_prefs/x.xml");
+        assert_eq!(
+            r.path,
+            "/data/user/0/dev.aether.host/aether/virtual/com.target.game/data/shared_prefs/x.xml"
+        );
         assert!(r.writable);
     }
 
@@ -483,16 +704,32 @@ mod tests {
 
         // ...and a well-behaved deep path still resolves.
         let r = vfs.translate("/data/data/com.target.game/a/../b/c.dat");
-        assert_eq!(r.path, "/data/user/0/dev.aether.host/aether/virtual/com.target.game/data/b/c.dat");
+        assert_eq!(
+            r.path,
+            "/data/user/0/dev.aether.host/aether/virtual/com.target.game/data/b/c.dat"
+        );
     }
 
     #[test]
     fn host_data_is_never_reachable() {
         let vfs = Vfs::new(cfg());
-        assert_eq!(vfs.translate("/data/data/dev.aether.host").status, Status::Denied);
-        assert_eq!(vfs.translate("/data/user/0/dev.aether.host/aether/virtual").status, Status::Denied);
-        assert_eq!(vfs.translate("/data/data/com.other.app").status, Status::Denied);
-        assert_eq!(vfs.translate("/data/user/0/com.other.app/x").status, Status::Denied);
+        assert_eq!(
+            vfs.translate("/data/data/dev.aether.host").status,
+            Status::Denied
+        );
+        assert_eq!(
+            vfs.translate("/data/user/0/dev.aether.host/aether/virtual")
+                .status,
+            Status::Denied
+        );
+        assert_eq!(
+            vfs.translate("/data/data/com.other.app").status,
+            Status::Denied
+        );
+        assert_eq!(
+            vfs.translate("/data/user/0/com.other.app/x").status,
+            Status::Denied
+        );
     }
 
     #[test]
@@ -510,7 +747,10 @@ mod tests {
     #[test]
     fn system_is_read_only() {
         let vfs = Vfs::new(cfg());
-        assert_eq!(vfs.resolve("/system/lib64/libc.so", Mode::Read).status, Status::Native);
+        assert_eq!(
+            vfs.resolve("/system/lib64/libc.so", Mode::Read).status,
+            Status::Native
+        );
         let w = vfs.resolve("/system/lib64/libc.so", Mode::Write);
         assert_eq!(w.status, Status::Denied);
         assert_eq!(w.reason, Some(DenyReason::WriteToReadOnly));
@@ -519,19 +759,28 @@ mod tests {
     #[test]
     fn strict_mode_is_fail_closed() {
         let vfs = Vfs::new(cfg());
-        assert_eq!(vfs.translate("/some/undeclared/path").reason, Some(DenyReason::NoRule));
+        assert_eq!(
+            vfs.translate("/some/undeclared/path").reason,
+            Some(DenyReason::NoRule)
+        );
 
         let mut loose = cfg();
         loose.strict = false;
         let vfs = Vfs::new(loose);
-        assert_eq!(vfs.translate("/some/undeclared/path").status, Status::Native);
+        assert_eq!(
+            vfs.translate("/some/undeclared/path").status,
+            Status::Native
+        );
     }
 
     #[test]
     fn round_trip_to_guest() {
         let vfs = Vfs::new(cfg());
         let host = vfs.translate("/data/data/com.target.game/files/a.dat").path;
-        assert_eq!(vfs.to_guest(&host), Some("/data/data/com.target.game/files/a.dat".into()));
+        assert_eq!(
+            vfs.to_guest(&host),
+            Some("/data/data/com.target.game/files/a.dat".into())
+        );
         assert_eq!(vfs.to_guest("/data/data/com.other/x"), None);
     }
 

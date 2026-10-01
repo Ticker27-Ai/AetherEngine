@@ -39,14 +39,25 @@ fn profiled() -> Vfs {
 fn facebook_sdk_paths_are_read_only() {
     let v = profiled();
     let p = "/sdcard/Android/data/com.facebook.katana/cache/token.bin";
-    assert_eq!(v.resolve(p, Mode::Read).status, Status::Native, "the FB SDK must find the app cache");
-    assert_eq!(v.resolve(p, Mode::Write).status, Status::Denied, "but must never be able to write it");
+    assert_eq!(
+        v.resolve(p, Mode::Read).status,
+        Status::Native,
+        "the FB SDK must find the app cache"
+    );
+    assert_eq!(
+        v.resolve(p, Mode::Write).status,
+        Status::Denied,
+        "but must never be able to write it"
+    );
 }
 
 #[test]
 fn crash_dumps_land_in_the_cache_bucket() {
     let v = profiled();
-    let r = v.resolve("/data/data/com.miniclip.eightballpool/app_dumps/crash.dmp", Mode::Write);
+    let r = v.resolve(
+        "/data/data/com.miniclip.eightballpool/app_dumps/crash.dmp",
+        Mode::Write,
+    );
     assert_eq!(r.status, Status::Shadowed);
     assert_eq!(
         r.path,
@@ -54,7 +65,9 @@ fn crash_dumps_land_in_the_cache_bucket() {
     );
     // Without the profile override the same path would be in `data`.
     assert_ne!(
-        vfs().translate("/data/data/com.miniclip.eightballpool/app_dumps/crash.dmp").path,
+        vfs()
+            .translate("/data/data/com.miniclip.eightballpool/app_dumps/crash.dmp")
+            .path,
         r.path
     );
 }
@@ -94,7 +107,11 @@ fn the_host_container_itself_is_never_visible() {
         "/data/user/0/dev.aether.host/shared_prefs/aether.xml",
         "/data/data/com.miniclip.eightballpool/../../dev.aether.host/aether/virtual",
     ] {
-        assert_eq!(v.translate(p).status, Status::Denied, "{p} must never resolve");
+        assert_eq!(
+            v.translate(p).status,
+            Status::Denied,
+            "{p} must never resolve"
+        );
     }
 }
 
@@ -114,14 +131,19 @@ fn split_apk_native_dir_is_readable_not_writable() {
 fn sibling_games_are_unreachable() {
     let v = vfs();
     // A second virtualised game in the same host process.
-    assert_eq!(v.translate("/data/data/com.other.game/save.bin").status, Status::Denied);
     assert_eq!(
-        v.translate("/sdcard/Android/data/com.other.game/files/x").status,
+        v.translate("/data/data/com.other.game/save.bin").status,
+        Status::Denied
+    );
+    assert_eq!(
+        v.translate("/sdcard/Android/data/com.other.game/files/x")
+            .status,
         Status::Denied,
         "scoped storage of other apps must be denied even in passthrough mode"
     );
     assert_eq!(
-        v.translate("/sdcard/Android/obb/com.other.game/main.obb").status,
+        v.translate("/sdcard/Android/obb/com.other.game/main.obb")
+            .status,
         Status::Denied
     );
 }

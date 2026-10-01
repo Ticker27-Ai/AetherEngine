@@ -133,7 +133,10 @@ mod tests {
 
     #[test]
     fn strips_only_on_segment_boundary() {
-        assert_eq!(strip_prefix("/data/data/pkg/f", "/data/data/pkg"), Some("f"));
+        assert_eq!(
+            strip_prefix("/data/data/pkg/f", "/data/data/pkg"),
+            Some("f")
+        );
         assert_eq!(strip_prefix("/data/data/pkg", "/data/data/pkg"), Some(""));
         assert_eq!(strip_prefix("/data/data/pkg2", "/data/data/pkg"), None);
     }
