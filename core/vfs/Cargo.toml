@@ -1,0 +1,18 @@
+[package]
+name = "aether-vfs"
+version = "0.1.0"
+edition = "2021"
+authors = ["AetherEngine Core Team"]
+description = "Deterministic path-translation + isolation policy engine for the AetherEngine in-process virtualisation container"
+license = "Apache-2.0"
+publish = false
+
+[lib]
+name = "aether_vfs"
+#  rlib      -> consumed by other Rust crates / unit tests
+#  staticlib -> linked into libaether-native.so by CMake
+crate-type = ["rlib", "staticlib"]
+
+[dependencies]
+# ZERO external dependencies on purpose: this crate is linked into a hot,
+# security-sensitive path and must build reproducibly and offline.

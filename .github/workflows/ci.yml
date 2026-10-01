@@ -1,0 +1,183 @@
+name: CI
+
+# ---------------------------------------------------------------------------
+# AetherEngine — the first workflow in this repository.
+#
+# Gates every push to main and every pull request on the checks that need
+# nothing but a GitHub-hosted runner:
+#
+#   readiness  structural invariants no compiler here can check
+#              (JNI signatures, stub pool vs manifest, profile drift)
+#   rust-vfs   the policy engine: fmt, clippy, tests, golden policy file
+#   android    :core:host + :app assemble, JVM unit tests, lint
+#   stubs      the generated VirtualActivity stub pool is fresh
+#
+# Deliberately left for follow-up workflow files:
+#   * on-device instrumented tests — the hidden-API unseal and the Activity
+#     attach bridge depend on the ART version of the device under test
+#   * tag-triggered release packaging + signing
+#   * ui/flutter analyze/test — that module is optional and not in the repo
+#     yet (settings.gradle.kts skips it when absent)
+# ---------------------------------------------------------------------------
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  JAVA_VERSION: '17'
+  # AGP 8.7.3 (gradle/libs.versions.toml) needs Gradle >= 8.9. The repo does
+  # not ship a wrapper yet, so CI installs this exact version itself; once
+  # `gradle wrapper` files are committed, switch to ./gradlew and drop this.
+  GRADLE_VERSION: '8.9'
+  # Pinned to 3.5.4 because 3.5.5 is yanked on crates.io.
+  CARGO_NDK_VERSION: '3.5.4'
+
+jobs:
+  # -------------------------------------------------------------------------
+  # Cheap structural gate. Fails fast on cross-language drift that no
+  # compiler in this repo can catch on its own, so the expensive jobs below
+  # never start on a broken tree.
+  # -------------------------------------------------------------------------
+  readiness:
+    name: Readiness / structure
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+
+      # PyYAML unlocks the "CI workflows are valid YAML" check.
+      - name: Install PyYAML
+        run: pip install pyyaml
+
+      - name: Check readiness
+        run: python3 tools/check-readiness.py
+
+  # -------------------------------------------------------------------------
+  # The policy engine is the security boundary of the whole project: it is
+  # pure logic with zero dependencies, so it gets the strictest job here.
+  # -------------------------------------------------------------------------
+  rust-vfs:
+    name: Rust / aether-vfs
+    needs: readiness
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: core/vfs
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: core/vfs
+
+      - name: Format
+        run: cargo fmt --all -- --check
+
+      - name: Clippy (deny warnings)
+        run: cargo clippy --all-targets -- -D warnings
+
+      - name: Test
+        run: cargo test --all-targets
+
+      - name: Policy golden file is up to date
+        run: |
+          cargo run --quiet --example dump_policy > /tmp/policy.txt
+          diff -u ../../docs/vfs-policy.txt /tmp/policy.txt
+
+  # -------------------------------------------------------------------------
+  # Layer 1 (the host). JVM unit tests cover everything that does not need a
+  # live ART runtime; the rest waits for the instrumented-test workflow.
+  #
+  # The ubuntu-24.04 runner image ships the Android SDK (platform 35,
+  # build-tools 35.0.0) and the NDK (27.3) with ANDROID_HOME / ANDROID_NDK_HOME
+  # preset, which is what build-rust.sh and AGP pick up. Pinned to 24.04
+  # rather than ubuntu-latest because that label moves to 26.04 in Nov 2026.
+  # -------------------------------------------------------------------------
+  android:
+    name: Android / assemble + unit test + lint
+    needs: readiness
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-java@v5
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: temurin
+
+      # No wrapper in the repo yet: install the pinned Gradle on PATH.
+      # cache-provider: basic keeps caching on the OSS actions/cache backend.
+      - uses: gradle/actions/setup-gradle@v6
+        with:
+          gradle-version: ${{ env.GRADLE_VERSION }}
+          cache-provider: basic
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android, armv7-linux-androideabi, x86_64-linux-android
+
+      - name: Install cargo-ndk (pinned)
+        run: cargo install cargo-ndk --version ${{ env.CARGO_NDK_VERSION }} --locked
+
+      # Produces core/vfs/target/<abi>/release/libaether_vfs.a for every ABI
+      # in abiFilters. Doing it as its own step fails fast with Rust errors
+      # and leaves the Gradle `compileAetherVfs` task up-to-date.
+      - name: Compile native layers (Rust staticlib + C++ JNI)
+        run: ./tools/build-rust.sh --release
+
+      - name: Assemble
+        run: gradle :core:host:assembleDebug :app:assembleDebug --stacktrace
+
+      - name: Unit tests
+        run: gradle :core:host:testDebugUnitTest --stacktrace
+
+      - name: Lint
+        run: gradle :core:host:lintDebug --stacktrace
+
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: android-reports
+          path: |
+            core/host/build/reports/**
+            core/host/build/test-results/**
+          retention-days: 7
+
+  # -------------------------------------------------------------------------
+  # The stub pool is generated, not hand-written. If someone edits the
+  # generated file without regenerating it, the build must fail here rather
+  # than at 3am on a device with a "ClassNotFoundException: StubActivity07".
+  # -------------------------------------------------------------------------
+  stubs:
+    name: Generated code / VirtualActivity stubs
+    needs: readiness
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Regenerate and diff
+        run: |
+          ./tools/gen-stubs/gen_stubs.sh
+          git diff --exit-code core/host/src/main/java/dev/aether/host/runtime/VirtualStubs.kt \
+                               core/host/src/main/AndroidManifest.xml

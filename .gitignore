@@ -1,0 +1,52 @@
+# Gradle / Android
+*.iml
+.gradle/
+local.properties
+/build/
+build/
+captures/
+.externalNativeBuild/
+.cxx/
+.cxx-ndk/
+*.apk
+*.aab
+*.ap_
+*.dex
+output.json
+
+# Kotlin
+.kotlin/
+out/
+
+# Rust
+core/vfs/target/
+**/*.rs.bk
+
+# Flutter / Dart
+ui/flutter/.dart_tool/
+ui/flutter/.packages
+ui/flutter/build/
+ui/flutter/.android/
+ui/flutter/.ios/
+ui/flutter/.flutter-plugins
+ui/flutter/.flutter-plugins-dependencies
+ui/flutter/.idea/
+
+# Secrets — never commit a keystore
+*.jks
+*.keystore
+signing.properties
+
+# IDE
+.idea/
+*.ipr
+*.iws
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Local experiment artifacts
+/tools/local/
+*.log
