@@ -1,0 +1,161 @@
+# =============================================================================
+# AetherEngine guest profile — 8 Ball Pool
+#
+# This file is the *contract* between what we know about the target and what
+# the container sets up before the first guest class is ever loaded. Every
+# field is consumed by:
+#   - DynamicApkLoader   (split APKs, ABI selection, native lib extraction)
+#   - VfsRouter          (extra_rules, extra_links, shared_media)
+#   - HostInitializer    (permissions, proxy services)
+#
+# Keep it in sync with dev.aether.host.core.GuestProfiles; CI enforces that.
+# =============================================================================
+
+[identity]
+package = "com.miniclip.eightballpool"
+display_name = "8 Ball Pool"
+publisher = "Miniclip.com"
+
+[apk]
+# CRITICAL: 8 Ball Pool ships as an Android App Bundle. A "full install" is
+# base.apk + split_config.<abi>.apk (+ optional split_config.<lang>.apk and
+# split_asset packs). A container that only mounts base.apk will boot the game
+# and then die the instant it touches a native library or a density/locale
+# resource — with an error that points at the wrong thing.
+#
+# Consequences for DynamicApkLoader:
+#   * dexPath     = ":".join(all splits whose name has no ".config." prefix
+#                   that we cannot satisfy, base first)
+#   * addAssetPath must be called for EVERY split, in manifest order, or
+#                   Resources will resolve the wrong bucket
+#   * native libs live in split_config.arm64_v8a.apk, NOT in base.apk
+splits_required = true
+base_candidates = ["base.apk", "com.miniclip.eightballpool.apk"]
+native_split_pattern = "split_config.arm64_v8a.apk"
+
+[abis]
+# Observed on the Play Store / APKMirror: arm64-v8a primary, armeabi-v7a for
+# the long tail of 32-bit-only devices.
+primary = "arm64-v8a"
+fallback = ["armeabi-v7a"]
+# 8 Ball Pool does NOT ship an x86 build; an emulator without ARM translation
+# must use the v7a fallback under Houdini/ARM translation, or it will not boot.
+emulator_note = "x86_64 emulators need an ARM-translation image; no native x86 lib exists."
+
+[sdk]
+min = 23          # Android 6.0+ on current releases (was 21 on older builds)
+target = 34
+# The host must equal or exceed the guest's targetSdk for the hidden-API
+# exemption path to behave the way the guest expects.
+host_minimum_target = 34
+
+[permissions]
+# VERIFIED against the published package (v55.10.1 / v56.x): this is the real
+# declared permission set, not a guess.
+declared = [
+  "android.permission.INTERNET",
+  "android.permission.ACCESS_NETWORK_STATE",
+  "android.permission.FOREGROUND_SERVICE",
+  "android.permission.WAKE_LOCK",
+  "android.permission.VIBRATE",
+  "android.permission.POST_NOTIFICATIONS",
+  "android.permission.PACKAGE_USAGE_STATS",          # third-party: needs special access
+  "com.google.android.gms.permission.AD_ID",
+  "android.permission.ACCESS_ADSERVICES_AD_ID",
+  "android.permission.ACCESS_ADSERVICES_ATTRIBUTION",
+  "android.permission.ACCESS_ADSERVICES_TOPICS",
+  "com.android.vending.BILLING",                     # Play IAP -> will NOT work
+  "com.google.android.c2dm.permission.RECEIVE",      # FCM push -> will NOT work
+  "com.miniclip.eightballpool.permission.C2D_MESSAGE",
+  "com.google.android.finsky.permission.BIND_GET_INSTALL_REFERRER_SERVICE",
+  "com.applovin.array.apphub.permission.BIND_APPHUB_SERVICE",
+  "com.huawei.appmarket.service.commondata.permission.GET_COMMON_DATA",
+  "com.miniclip.eightballpool.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION",
+]
+runtime_grant_before_launch = ["android.permission.POST_NOTIFICATIONS"]
+
+[gms]
+# See docs/GMS-ARCHITECTURE.md for the full analysis.
+tier = "in_process_spoof"          # passthrough | in_process_spoof | signature_spoofing
+
+# GOOD NEWS: the primary login is Miniclip ID / Facebook, NOT Google Play Games,
+# and the package ships a Huawei AppGallery code path. The game therefore has a
+# no-GMS route already, so it should boot and play without GMS identity.
+primary_login = ["miniclip", "facebook"]
+login_expected_to_work = true
+
+# What will break, and must be surfaced in the UI rather than silently failing.
+expected_broken = [
+  "play_billing",     # com.android.vending.BILLING: package+cert mismatch
+  "fcm_push",         # token is issued to the host package
+  "play_integrity",   # attestation reports the host
+  "play_games",       # not the primary login, so low impact
+]
+
+# Suppress these during startup instead of letting them kill the process.
+suppressed_exceptions = [
+  "com.google.android.gms.common.GooglePlayServicesNotAvailableException",
+  "com.google.android.gms.common.GooglePlayServicesRepairableException",
+  "com.google.android.play.core.assetpacks.AssetPackException",
+]
+suppressed_connection_results = [4, 6, 10, 16, 17]
+
+[vfs]
+# Shared storage stays passthrough: the game writes screenshots/replays into
+# the shared gallery and expects them to be visible to the user afterwards.
+shared_media = "passthrough"
+strict = true
+
+# Exceptions on top of the built-in policy.
+#
+# NOTE: `/data/data/<pkg>/**` is ALREADY shadowed wholesale by the default
+# policy, so a rule nested underneath it is redundant *unless* it changes the
+# bucket or the action. Rules here therefore only do one of two things:
+#   1. re-bucket a subtree (e.g. telemetry -> `cache`, so it can be wiped), or
+#   2. punch a controlled hole in the isolation for an SDK that needs it.
+#
+# CAVEAT: a rule's matched prefix is *replaced* by the bucket directory, so
+# two rules sharing a bucket have to use non-colliding source names.
+extra_rules = [
+  # Crash/telemetry spool: junk that must not survive an uninstall.
+  { template = "/data/data/com.miniclip.eightballpool/app_dumps", action = "shadow", bucket = "cache" },
+  # Facebook SDK login reads the installed FB app's external cache. Read-only:
+  # the guest must never be able to write into another app's storage.
+  { template = "/sdcard/Android/data/com.facebook.katana", action = "readonly" },
+  { template = "/sdcard/Android/data/com.facebook.orca", action = "readonly" },
+]
+
+extra_links = [
+  { from = "/data/data/com.miniclip.eightballpool", to = "/data/user/0/com.miniclip.eightballpool" },
+]
+
+[runtime]
+# Services the guest expects that cannot simply be forwarded to the host's
+# process because they carry the *guest's* package name in the Binder call.
+proxy_services = [
+  "activity",        # ActivityManager: rewrites undeclared components
+  "package",         # PackageManager: answers queries for the virtual package
+  "battery",         # advertising/telemetry SDKs probe these
+  "connectivity",
+]
+
+# Anything the game binds to that must NEVER see the host's identity.
+spoofed_identity = [
+  "com.android.vending",        # IAP / billing
+  "com.google.android.gms",     # login, ads id, cloud save
+]
+
+[notes]
+engine = "unknown-unverified"
+# Engine is NOT confirmed. Verify on-device before assuming anything:
+#   adb shell run-as <host> ls /data/data/<host>/aether/native/com.miniclip.eightballpool
+# If you see libil2cpp.so + libunity.so -> Unity/IL2CPP (metadata in
+# assets/bin/Data/Managed/Metadata/global-metadata.dat; the container must keep
+# that file mappable, i.e. do NOT compress-shadow it).
+# If you see libmain.so only    -> custom/other engine.
+verify_before_assumptions = [
+  "Which .so files exist in split_config.arm64_v8a.apk",
+  "Whether any anti-tamper / integrity SDK is present",
+  "Whether the game calls getExternalFilesDir() at startup",
+  "Whether Play Integrity / SafetyNet gates the login flow",
+]

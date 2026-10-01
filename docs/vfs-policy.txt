@@ -1,0 +1,70 @@
+# aether-vfs policy dump
+# guest      : com.target.game
+# host       : dev.aether.host
+# host dir   : /data/user/0/dev.aether.host
+# shadow root: /data/user/0/dev.aether.host/aether/virtual
+# rules      : 62
+
+TEMPLATE                                           ACTION                 NOTE
+/data/data/dev.aether.host                          Deny                    host private data
+/data/user/0/dev.aether.host                        Deny                    host private data (multi-user)
+/data/user/*/dev.aether.host                        Deny                    host private data (any user)
+/data/user/0/dev.aether.host                        Deny                    host data root
+/data/data/*                                        Deny                    other packages
+/data/user/*/                                       Deny                    other packages (multi-user)
+/data/user/0/dev.aether.host/aether/virtual         Deny                    shadow root
+/data/data/com.target.game                          Shadow                  guest private data
+/data/user/0/com.target.game                        Shadow                  guest private data (this user)
+/data/user/*/com.target.game                        Shadow                  guest private data (any user)
+/data/user_de/0/com.target.game                     Shadow                  device-encrypted storage
+/sdcard/Android/data/com.target.game                Shadow                  scoped external data
+/sdcard/Android/media/com.target.game               Shadow                  scoped external media
+/sdcard/Android/obb/com.target.game                 Shadow                  expansion files
+/storage/emulated/0/Android/data/com.target.game    Shadow                  scoped external data
+/storage/emulated/0/Android/media/com.target.game   Shadow                  scoped external media
+/storage/emulated/0/Android/obb/com.target.game     Shadow                  expansion files
+/storage/self/primary/Android/data/com.target.game  Shadow                  scoped external data
+/storage/self/primary/Android/media/com.target.game Shadow                  scoped external media
+/storage/self/primary/Android/obb/com.target.game   Shadow                  expansion files
+/mnt/sdcard/Android/data/com.target.game            Shadow                  scoped external data
+/mnt/sdcard/Android/media/com.target.game           Shadow                  scoped external media
+/mnt/sdcard/Android/obb/com.target.game             Shadow                  expansion files
+/storage/emulated/*/Android/data/*                  Deny                    other packages' scoped storage
+/sdcard/Android/data/*                              Deny                    other packages' scoped storage
+/storage/emulated/*/Android/media/*                 Deny                    other packages' scoped storage
+/sdcard/Android/media/*                             Deny                    other packages' scoped storage
+/storage/emulated/*/Android/obb/*                   Deny                    other packages' scoped storage
+/sdcard/Android/obb/*                               Deny                    other packages' scoped storage
+/storage/emulated/*/Android/data/com.target.game    Shadow                  scoped external data (any user)
+/storage/emulated/*/Android/media/com.target.game   Shadow                  scoped external media (any user)
+/storage/emulated/*/Android/obb/com.target.game     Shadow                  expansion files (any user)
+/sdcard                                             Passthrough             shared storage
+/storage/emulated/0                                 Passthrough             shared storage
+/storage/self/primary                               Passthrough             shared storage
+/mnt/sdcard                                         Passthrough             shared storage
+/data/media                                         Passthrough             shared storage
+/storage/emulated/*                                 Passthrough             shared storage (any user)
+/storage/*                                          ReadOnlyPassthrough     removable/OTG media
+/system                                             ReadOnlyPassthrough     system surface
+/system_ext                                         ReadOnlyPassthrough     system surface
+/vendor                                             ReadOnlyPassthrough     system surface
+/odm                                                ReadOnlyPassthrough     system surface
+/oem                                                ReadOnlyPassthrough     system surface
+/product                                            ReadOnlyPassthrough     system surface
+/apex                                               ReadOnlyPassthrough     system surface
+/etc                                                ReadOnlyPassthrough     system surface
+/proc                                               ReadOnlyPassthrough     system surface
+/sys                                                ReadOnlyPassthrough     system surface
+/config                                             ReadOnlyPassthrough     system surface
+/metadata                                           ReadOnlyPassthrough     system surface
+/data/dalvik-cache                                  ReadOnlyPassthrough     system surface
+/data/app                                           ReadOnlyPassthrough     system surface
+/data/misc                                          ReadOnlyPassthrough     system surface
+/data/system                                        ReadOnlyPassthrough     system surface
+/data/local                                         ReadOnlyPassthrough     system surface
+/data/app/com.target.game-*                         ReadOnlyPassthrough     guest apk
+/data/app/*/com.target.game-*                       ReadOnlyPassthrough     guest apk (A10+ layout)
+/data/adb                                           Deny                    root tooling
+/data/local/tmp                                     Passthrough             debuggable scratch
+/dev                                                Passthrough             devices, ashmem, urandom
+/proc/self                                          Passthrough             self introspection

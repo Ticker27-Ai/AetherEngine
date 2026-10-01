@@ -1,0 +1,392 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  AetherEngine — Layer 1 (The Host)
+
+  This manifest declares the container, NOT the guest. Guests are loaded from
+  APK files at runtime and their Activities are hosted by the generated stub
+  pool below.
+
+  The block between BEGIN/END GENERATED STUBS is owned by
+  tools/gen-stubs/gen_stubs.py — do not edit it by hand; CI fails on drift.
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!--
+      The host must hold every permission it may have to answer on behalf of a
+      guest. Requesting one the guest declares but the host does not will fail
+      silently at the framework level and surface as an SDK error inside the
+      game, which is miserable to diagnose.
+    -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="com.google.android.gms.permission.AD_ID" />
+
+    <!--
+      API 30+ package visibility: without these, `PackageManager` returns
+      NameNotFoundException for GMS / Play Store / Facebook, which is exactly
+      the failure mode that makes ad SDKs and social login give up at startup.
+    -->
+    <queries>
+        <package android:name="com.google.android.gms" />
+        <package android:name="com.android.vending" />
+        <package android:name="com.facebook.katana" />
+        <package android:name="com.facebook.orca" />
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.LAUNCHER" />
+        </intent>
+    </queries>
+
+    <application
+        android:allowBackup="false"
+        android:extractNativeLibs="true"
+        android:hardwareAccelerated="true"
+        android:isGame="true"
+        android:label="@string/aether_host_label"
+        android:largeHeap="true"
+        android:theme="@style/AetherTheme"
+        tools:targetApi="34">
+
+        <!--
+          The host process must never be killed out from under a running guest
+          without warning; mark it so the shell can show it in the task list.
+        -->
+        <meta-data
+            android:name="dev.aether.HOST_CONTAINER"
+            android:value="true" />
+
+        <!-- BEGIN GENERATED STUBS -->
+    <activity
+        android:name="dev.aether.host.runtime.StubStandard00"
+        android:launchMode="standard"
+        android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|keyboardHidden|density|fontScale|locale|uiMode|navigation"
+        android:exported="false"
+        android:hardwareAccelerated="true"
+        android:resizeableActivity="true"
+        android:supportsPictureInPicture="false"
+        android:windowSoftInputMode="adjustResize"
+        android:theme="@style/AetherTheme"
+        android:taskAffinity="" />
+
+    <activity
+        android:name="dev.aether.host.runtime.StubStandard01"
+        android:launchMode="standard"
+        android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|keyboardHidden|density|fontScale|locale|uiMode|navigation"
+        android:exported="false"
+        android:hardwareAccelerated="true"
+        android:resizeableActivity="true"
+        android:supportsPictureInPicture="false"
+        android:windowSoftInputMode="adjustResize"
+        android:theme="@style/AetherTheme"
+        android:taskAffinity="" />
+
+    <activity
+        android:name="dev.aether.host.runtime.StubStandard02"
+        android:launchMode="standard"
+        android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|keyboardHidden|density|fontScale|locale|uiMode|navigation"
+        android:exported="false"
+        android:hardwareAccelerated="true"
+        android:resizeableActivity="true"
+        android:supportsPictureInPicture="false"
+        android:windowSoftInputMode="adjustResize"
+        android:theme="@style/AetherTheme"
+        android:taskAffinity="" />
+
+    <activity
+        android:name="dev.aether.host.runtime.StubStandard03"
+        android:launchMode="standard"
+        android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|keyboardHidden|density|fontScale|locale|uiMode|navigation"
+        android:exported="false"
+        android:hardwareAccelerated="true"
+        android:resizeableActivity="true"
+        android:supportsPictureInPicture="false"
+        android:windowSoftInputMode="adjustResize"
+        android:theme="@style/AetherTheme"
+        android:taskAffinity="" />
+
+    <activity
+        android:name="dev.aether.host.runtime.StubStandard04"
+        android:launchMode="standard"
+        android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|keyboardHidden|density|fontScale|locale|uiMode|navigation"
+        android:exported="false"
+        android:hardwareAccelerated="true"
+        android:resizeableActivity="true"
+        android:supportsPictureInPicture="false"
+        android:windowSoftInputMode="adjustResize"
+        android:theme="@style/AetherTheme"
+        android:taskAffinity="" />
+
+    <activity
+        android:name="dev.aether.host.runtime.StubStandard05"
+        android:launchMode="standard"
+        android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|keyboardHidden|density|fontScale|locale|uiMode|navigation"
+        android:exported="false"
+        android:hardwareAccelerated="true"
+        android:resizeableActivity="true"
+        android:supportsPictureInPicture="false"
+        android:windowSoftInputMode="adjustResize"
+        android:theme="@style/AetherTheme"
+        android:taskAffinity="" />
+
+    <activity
+        android:name="dev.aether.host.runtime.StubStandard06"
+        android:launchMode="standard"
+        android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|keyboardHidden|density|fontScale|locale|uiMode|navigation"
+        android:exported="false"
+        android:hardwareAccelerated="true"
+        android:resizeableActivity="true"
+        android:supportsPictureInPicture="false"
+        android:windowSoftInputMode="adjustResize"
+        android:theme="@style/AetherTheme"
+        android:taskAffinity="" />
+
+    <activity
+        android:name="dev.aether.host.runtime.StubStandard07"
+        android:launchMode="standard"
+        android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|keyboardHidden|density|fontScale|locale|uiMode|navigation"
+        android:exported="false"
+        android:hardwareAccelerated="true"
+        android:resizeableActivity="true"
+        android:supportsPictureInPicture="false"
+        android:windowSoftInputMode="adjustResize"
+        android:theme="@style/AetherTheme"
+        android:taskAffinity="" />
+
+    <activity
+        android:name="dev.aether.host.runtime.StubStandard08"
+        android:launchMode="standard"
+        android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|keyboardHidden|density|fontScale|locale|uiMode|navigation"
+        android:exported="false"
+        android:hardwareAccelerated="true"
+        android:resizeableActivity="true"
+        android:supportsPictureInPicture="false"
+        android:windowSoftInputMode="adjustResize"
+        android:theme="@style/AetherTheme"
+        android:taskAffinity="" />
+
+    <activity
+        android:name="dev.aether.host.runtime.StubStandard09"
+        android:launchMode="standard"
+        android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|keyboardHidden|density|fontScale|locale|uiMode|navigation"
+        android:exported="false"
+        android:hardwareAccelerated="true"
+        android:resizeableActivity="true"
+        android:supportsPictureInPicture="false"
+        android:windowSoftInputMode="adjustResize"
+        android:theme="@style/AetherTheme"
+        android:taskAffinity="" />
+
+    <activity
+        android:name="dev.aether.host.runtime.StubStandard10"
+        android:launchMode="standard"
+        android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|keyboardHidden|density|fontScale|locale|uiMode|navigation"
+        android:exported="false"
+        android:hardwareAccelerated="true"
+        android:resizeableActivity="true"
+        android:supportsPictureInPicture="false"
+        android:windowSoftInputMode="adjustResize"
+        android:theme="@style/AetherTheme"
+        android:taskAffinity="" />
+
+    <activity
+        android:name="dev.aether.host.runtime.StubStandard11"
+        android:launchMode="standard"
+        android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|keyboardHidden|density|fontScale|locale|uiMode|navigation"
+        android:exported="false"
+        android:hardwareAccelerated="true"
+        android:resizeableActivity="true"
+        android:supportsPictureInPicture="false"
+        android:windowSoftInputMode="adjustResize"
+        android:theme="@style/AetherTheme"
+        android:taskAffinity="" />
+
+    <activity
+        android:name="dev.aether.host.runtime.StubSingleTop00"
+        android:launchMode="singleTop"
+        android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|keyboardHidden|density|fontScale|locale|uiMode|navigation"
+        android:exported="false"
+        android:hardwareAccelerated="true"
+        android:resizeableActivity="true"
+        android:supportsPictureInPicture="false"
+        android:windowSoftInputMode="adjustResize"
+        android:theme="@style/AetherTheme"
+        android:taskAffinity="" />
+
+    <activity
+        android:name="dev.aether.host.runtime.StubSingleTop01"
+        android:launchMode="singleTop"
+        android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|keyboardHidden|density|fontScale|locale|uiMode|navigation"
+        android:exported="false"
+        android:hardwareAccelerated="true"
+        android:resizeableActivity="true"
+        android:supportsPictureInPicture="false"
+        android:windowSoftInputMode="adjustResize"
+        android:theme="@style/AetherTheme"
+        android:taskAffinity="" />
+
+    <activity
+        android:name="dev.aether.host.runtime.StubSingleTop02"
+        android:launchMode="singleTop"
+        android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|keyboardHidden|density|fontScale|locale|uiMode|navigation"
+        android:exported="false"
+        android:hardwareAccelerated="true"
+        android:resizeableActivity="true"
+        android:supportsPictureInPicture="false"
+        android:windowSoftInputMode="adjustResize"
+        android:theme="@style/AetherTheme"
+        android:taskAffinity="" />
+
+    <activity
+        android:name="dev.aether.host.runtime.StubSingleTop03"
+        android:launchMode="singleTop"
+        android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|keyboardHidden|density|fontScale|locale|uiMode|navigation"
+        android:exported="false"
+        android:hardwareAccelerated="true"
+        android:resizeableActivity="true"
+        android:supportsPictureInPicture="false"
+        android:windowSoftInputMode="adjustResize"
+        android:theme="@style/AetherTheme"
+        android:taskAffinity="" />
+
+    <activity
+        android:name="dev.aether.host.runtime.StubSingleTop04"
+        android:launchMode="singleTop"
+        android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|keyboardHidden|density|fontScale|locale|uiMode|navigation"
+        android:exported="false"
+        android:hardwareAccelerated="true"
+        android:resizeableActivity="true"
+        android:supportsPictureInPicture="false"
+        android:windowSoftInputMode="adjustResize"
+        android:theme="@style/AetherTheme"
+        android:taskAffinity="" />
+
+    <activity
+        android:name="dev.aether.host.runtime.StubSingleTop05"
+        android:launchMode="singleTop"
+        android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|keyboardHidden|density|fontScale|locale|uiMode|navigation"
+        android:exported="false"
+        android:hardwareAccelerated="true"
+        android:resizeableActivity="true"
+        android:supportsPictureInPicture="false"
+        android:windowSoftInputMode="adjustResize"
+        android:theme="@style/AetherTheme"
+        android:taskAffinity="" />
+
+    <activity
+        android:name="dev.aether.host.runtime.StubSingleTask00"
+        android:launchMode="singleTask"
+        android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|keyboardHidden|density|fontScale|locale|uiMode|navigation"
+        android:exported="false"
+        android:hardwareAccelerated="true"
+        android:resizeableActivity="true"
+        android:supportsPictureInPicture="false"
+        android:windowSoftInputMode="adjustResize"
+        android:theme="@style/AetherTheme"
+        android:taskAffinity="" />
+
+    <activity
+        android:name="dev.aether.host.runtime.StubSingleTask01"
+        android:launchMode="singleTask"
+        android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|keyboardHidden|density|fontScale|locale|uiMode|navigation"
+        android:exported="false"
+        android:hardwareAccelerated="true"
+        android:resizeableActivity="true"
+        android:supportsPictureInPicture="false"
+        android:windowSoftInputMode="adjustResize"
+        android:theme="@style/AetherTheme"
+        android:taskAffinity="" />
+
+    <activity
+        android:name="dev.aether.host.runtime.StubSingleTask02"
+        android:launchMode="singleTask"
+        android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|keyboardHidden|density|fontScale|locale|uiMode|navigation"
+        android:exported="false"
+        android:hardwareAccelerated="true"
+        android:resizeableActivity="true"
+        android:supportsPictureInPicture="false"
+        android:windowSoftInputMode="adjustResize"
+        android:theme="@style/AetherTheme"
+        android:taskAffinity="" />
+
+    <activity
+        android:name="dev.aether.host.runtime.StubSingleInstance00"
+        android:launchMode="singleInstance"
+        android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|keyboardHidden|density|fontScale|locale|uiMode|navigation"
+        android:exported="false"
+        android:hardwareAccelerated="true"
+        android:resizeableActivity="true"
+        android:supportsPictureInPicture="false"
+        android:windowSoftInputMode="adjustResize"
+        android:theme="@style/AetherTheme"
+        android:taskAffinity="" />
+
+    <activity
+        android:name="dev.aether.host.runtime.StubSingleInstance01"
+        android:launchMode="singleInstance"
+        android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|keyboardHidden|density|fontScale|locale|uiMode|navigation"
+        android:exported="false"
+        android:hardwareAccelerated="true"
+        android:resizeableActivity="true"
+        android:supportsPictureInPicture="false"
+        android:windowSoftInputMode="adjustResize"
+        android:theme="@style/AetherTheme"
+        android:taskAffinity="" />
+
+    <activity
+        android:name="dev.aether.host.runtime.StubTransparent00"
+        android:launchMode="standard"
+        android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|keyboardHidden|density|fontScale|locale|uiMode|navigation"
+        android:exported="false"
+        android:hardwareAccelerated="true"
+        android:resizeableActivity="true"
+        android:supportsPictureInPicture="false"
+        android:windowSoftInputMode="adjustResize"
+        android:theme="@style/AetherTheme.Transparent"
+        android:taskAffinity="" />
+
+    <activity
+        android:name="dev.aether.host.runtime.StubTransparent01"
+        android:launchMode="standard"
+        android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|keyboardHidden|density|fontScale|locale|uiMode|navigation"
+        android:exported="false"
+        android:hardwareAccelerated="true"
+        android:resizeableActivity="true"
+        android:supportsPictureInPicture="false"
+        android:windowSoftInputMode="adjustResize"
+        android:theme="@style/AetherTheme.Transparent"
+        android:taskAffinity="" />
+
+    <activity
+        android:name="dev.aether.host.runtime.StubTransparent02"
+        android:launchMode="standard"
+        android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|keyboardHidden|density|fontScale|locale|uiMode|navigation"
+        android:exported="false"
+        android:hardwareAccelerated="true"
+        android:resizeableActivity="true"
+        android:supportsPictureInPicture="false"
+        android:windowSoftInputMode="adjustResize"
+        android:theme="@style/AetherTheme.Transparent"
+        android:taskAffinity="" />
+
+    <activity
+        android:name="dev.aether.host.runtime.StubTransparent03"
+        android:launchMode="standard"
+        android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|keyboardHidden|density|fontScale|locale|uiMode|navigation"
+        android:exported="false"
+        android:hardwareAccelerated="true"
+        android:resizeableActivity="true"
+        android:supportsPictureInPicture="false"
+        android:windowSoftInputMode="adjustResize"
+        android:theme="@style/AetherTheme.Transparent"
+        android:taskAffinity="" />
+    <!-- END GENERATED STUBS -->
+
+    </application>
+
+</manifest>
