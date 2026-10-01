@@ -20,6 +20,10 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v6
+        with:
+          # Check out the PR branch itself, not the merge commit, so the
+          # formatted commit fast-forwards the branch.
+          ref: ${{ github.head_ref }}
 
       - uses: dtolnay/rust-toolchain@stable
         with:
